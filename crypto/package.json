@@ -1,0 +1,26 @@
+{
+  "name": "ai-gen-hackathon",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "npm run build && npm run start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@zoralabs/coins-sdk": "^0.0.8",
+    "@zoralabs/protocol-sdk": "^0.13.5",
+    "dotenv": "^16.5.0",
+    "viem": "^2.26.3",
+    "wagmi": "^2.14.16"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "typescript": "^5.8.3"
+  }
+}
