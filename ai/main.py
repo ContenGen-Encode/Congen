@@ -1,13 +1,19 @@
 import os
 import pika
+import caller
+import json
 
 # Connection parameters
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST")
 QUEUE_NAME = os.getenv("RABBITMQ_QUEUE")
 
-def callback(ch, method, properties, body):
+async def callback(ch, method, properties, body):
     print(f"Received message: {body}")
-    # publishMessage(body, "#")
+    # Encode body to an object from a json string
+    body = body.decode('utf-8')
+    body = json.loads(body)
+
+    await caller.generate(body)
 
 def main():
     # Connect to RabbitMQ server

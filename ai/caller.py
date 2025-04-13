@@ -1,56 +1,42 @@
+# import fastapi
 import os
-from openai import AzureOpenAI
 from dotenv import load_dotenv
-
+# import uvicorn
+from scripttest import scriptgen
+import tts
+import requests
+#from api.script import generate_system_prompt
+ 
 load_dotenv()
 
 # class Model(BaseModel)
 
-def response(client, deployment):
-    response = client.chat.completions.create(
-    stream=True,
-    messages=[
-        {
-            "role": "system",
-            "content": "You are a helpful assistant.",
-        },
-        {
-            "role": "user",
-            "content": "I am going to Paris, what should I see? in 15 words",
-        }
-    ],
-    max_tokens=800,
-    temperature=1.0,
-    top_p=1.0,
-    model=deployment,
-    )
 
-    for update in response:
-        if update.choices:
-            print(update.choices[0].delta.content or "")
-    client.close()
+def file_stream(file):
+    with open(file, "rb") as f:
+        yield from f   
 
-def generate():
-    endpoint = "https://ai-sebimomir-3123.cognitiveservices.azure.com/"
-    model_name = "gpt-4o-mini"
-    deployment = "gpt-4o-mini"
-
-    key = os.getenv("OPENAI_API_KEY")
-    # print(key)
-
-    subscription_key =key
-    #str(key)
+async def generate(params, endpoint_url: str, token: str):
+    output_audio_path = "output.mp3"
     
-    api_version = "2024-12-01-preview"
+    # Generate the script and TTS audio
+    script = scriptgen(params.prompt, params.tone)
+    output_audio_path = tts.tts(script.content, params.tone)
+    subtitle = tts.transcribe(output_audio_path)
 
-    client = AzureOpenAI(
-        api_version=api_version,
-        azure_endpoint=endpoint,
-        api_key=subscription_key,
-    )
+    print("Script:", script, subtitle)
 
-    return print(response(client, deployment))
+    # Prepare headers with Authorization token
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "audio/mpeg"
+    }
 
+    # Stream the file
+    with open(output_audio_path, 'rb') as f:
+        response = requests.post(endpoint_url, headers=headers, data=f)
 
+    print("Response status:", response.status_code)
+    print("Response body:", response.text)
 
-generate()
+    return response
