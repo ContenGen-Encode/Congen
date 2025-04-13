@@ -1,5 +1,6 @@
 import CustomSidebar from "@/components/sidebar";
 import { RBBTProvider } from "rbbt-client/next";
+import { Toaster } from "sonner";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -14,6 +15,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           }}
         >
           <CustomSidebar>{children}</CustomSidebar>
+          <Toaster/>
         </RBBTProvider>
       </body>
     </html>

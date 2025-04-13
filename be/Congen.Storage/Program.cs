@@ -71,7 +71,73 @@ app.UseHttpsRedirection();
 
 #region Blob
 
-app.MapGet("/storage/save-file", async (IHttpContextAccessor context, IStorageRepo repo) =>
+app.MapGet("/storage/get-file", async (string fileName, IHttpContextAccessor context, IStorageRepo repo) =>
+{
+    string text = "";
+
+    try
+    {
+        //get auth from headers
+        string auth = (string?)context.HttpContext.Request.Headers["Authorization"];
+
+        auth = auth.Replace("Bearer ", "");
+
+        string container = await Util.GetUserContainer(auth);
+
+        if (String.IsNullOrEmpty(container))
+        {
+            throw new Exception("This account does not have a 'container' value assigned in private metadata. Please resolve and try again");
+        }
+
+        var file = repo.GetFile(container, fileName);
+
+        //get text from file
+        StreamReader reader = new StreamReader(file);
+        text = reader.ReadToEnd();
+    }
+
+    catch (Exception ex)
+    {
+        return "";
+    }
+
+    return text;
+})
+.WithName("Get File")
+.WithOpenApi();
+
+app.MapGet("/storage/get-files", async (string[] fileNames, IHttpContextAccessor context, IStorageRepo repo) =>
+{
+    Stream[] files = new Stream[fileNames.Length];
+
+    try
+    {
+        //get auth from headers
+        string auth = (string?)context.HttpContext.Request.Headers["Authorization"];
+
+        auth = auth.Replace("Bearer ", "");
+
+        string container = await Util.GetUserContainer(auth);
+
+        if (String.IsNullOrEmpty(container))
+        {
+            throw new Exception("This account does not have a 'container' value assigned in private metadata. Please resolve and try again");
+        }
+
+        files = repo.GetFiles(container, fileNames);
+    }
+
+    catch (Exception ex)
+    {
+        return files;
+    }
+
+    return files;
+})
+.WithName("Get File")
+.WithOpenApi();
+
+app.MapPost("/storage/save-file", async (IHttpContextAccessor context, IStorageRepo repo) =>
 {
     SaveFileResponse response = new SaveFileResponse();
 
@@ -229,6 +295,8 @@ app.MapPost("/generate/file", async (int tone, string videoName, string audioNam
             VideoName = videoName,
             AudioName = audioName,
             FileName = fileName,
+            AccessToken = auth,
+            UserId = Util.GetUserId(auth)
         };
 
         await Util.SendMessage(JsonConvert.SerializeObject(message), Util.GetUserId(auth));
@@ -291,6 +359,8 @@ app.MapPost("/generate/prompt", async (GenerateVideoRequest request, IHttpContex
             VideoName = request.VideoName,
             AudioName = request.AudioName,
             Prompt = request.Prompt,
+            AccessToken = auth,
+            UserId = Util.GetUserId(auth)
         };
 
         //send message to rabbitmq

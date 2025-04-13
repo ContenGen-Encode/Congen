@@ -19,5 +19,9 @@ namespace Congen.Storage.Data.Data_Objects.RabbitMQ
         public string VideoName { get; set; }
 
         public string AudioName { get; set; }
+
+        public string AccessToken { get; set; }
+
+        public string UserId { get; set; }
     }
 }

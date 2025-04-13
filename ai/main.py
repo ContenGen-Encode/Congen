@@ -6,14 +6,22 @@ import json
 # Connection parameters
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST")
 QUEUE_NAME = os.getenv("RABBITMQ_QUEUE")
+EXCHANGE_NAME = os.getenv("RABBITMQ_EXCHANGE")
 
-async def callback(ch, method, properties, body):
-    print(f"Received message: {body}")
-    # Encode body to an object from a json string
-    body = body.decode('utf-8')
-    body = json.loads(body)
+def callback(ch, method, properties, body):
+    jsonObj = json.loads(body)
+    print(f"Received message: {jsonObj}")
 
-    await caller.generate(body)
+    #[audioRes, subRes] = caller.generate(jsonObj)
+    res = caller.generate(jsonObj)
+
+    # Publish message to the exchange
+    message = {
+    "audio": res[0],
+    "subtitle": res[1]
+    }
+    
+    publishMessage(json.dumps(message), jsonObj["UserId"])
 
 def main():
     # Connect to RabbitMQ server
@@ -26,7 +34,7 @@ def main():
     channel.queue_declare(queue=QUEUE_NAME, durable=True)
 
     # Make sure the exchange exists
-    channel.exchange_declare(exchange=QUEUE_NAME, exchange_type='topic', durable=True)
+    channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type='topic', durable=True)
 
     # Subscribe to the queue
     channel.basic_consume(
@@ -48,7 +56,7 @@ def main():
 def publishMessage(body, userId):
     # Publish a message to the exchange
     channel.basic_publish(
-        exchange=QUEUE_NAME,
+        exchange=EXCHANGE_NAME,
         routing_key=userId,
         body=body,
         properties=pika.BasicProperties(
